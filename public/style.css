@@ -512,7 +512,7 @@ input[type="number"] {
   height: 44px;
   padding: 0 14px;
   font-family: var(--font);
-  font-size: 15px;
+  font-size: 16px; /* ≥16px prevents iOS Safari auto-zoom on focus */
   color: var(--text-primary);
   background: #fff;
   border: 1.5px solid var(--border);
