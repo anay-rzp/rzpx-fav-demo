@@ -945,7 +945,50 @@ details[open] .ref-summary::after {
 /* ─── SUCCESS SCREEN ─────────────────────────────────────────── */
 /* Header reuses .verify-header / .verify-header-* from the verifying screen */
 .success-header-title {
-  color: var(--success-dark);
+  color: var(--primary);
+}
+
+/* Override the green badge to primary blue for the submitted state */
+#screen-success .verify-header-badge svg {
+  color: var(--primary);
+}
+
+/* ── Option C: frameless stacked summary ── */
+.success-summary {
+  margin: 8px 0 20px;
+}
+.summary-field {
+  padding: 14px 24px;
+}
+.summary-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+}
+.summary-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.35;
+}
+.summary-value.mono {
+  font-size: 17px;
+  letter-spacing: 0.3px;
+  color: var(--text-primary);
+}
+.summary-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0;
+}
+
+@media (max-width: 480px) {
+  .summary-field {
+    padding: 12px 16px;
+  }
 }
 .success-sub {
   font-size: 14px;
@@ -1428,9 +1471,14 @@ details[open] .ref-summary::after {
 
 /* ─── VERIFYING SCREEN ───────────────────────────────────────── */
 
-/* Full-page gradient — added on success via body.on-verifying */
+/* Full-page gradient — added on bank verified via body.on-verifying */
 body.on-verifying {
   background: linear-gradient(to bottom, var(--success-bg) 0%, #ffffff 70%);
+}
+
+/* Full-page gradient — added on application submitted via body.on-success */
+body.on-success {
+  background: linear-gradient(to bottom, var(--primary-light) 0%, #ffffff 70%);
 }
 
 /* ── Unified header (loading → success) ── */
@@ -1685,7 +1733,11 @@ body.on-verifying {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-card);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
   z-index: 50;
 }
 
@@ -1704,7 +1756,8 @@ body.on-verifying {
   .verify-header-spinner.hiding {
     opacity: 0;
   }
-  .verify-header-badge:not(.hidden) {
+  .verify-header-badge:not(.hidden),
+  #success-badge:not(.hidden) {
     animation: none;
     opacity: 1;
     transform: none;
@@ -1820,14 +1873,18 @@ body.on-verifying {
 
 @keyframes confettiFall {
   0% {
-    transform: translateY(0) rotate(0deg);
+    transform: translateY(0) translateX(0) rotate(0deg);
     opacity: 1;
   }
-  75% {
+  50% {
+    transform: translateY(54vh) translateX(calc(var(--drift, 0px) * 0.6)) rotate(180deg);
     opacity: 1;
+  }
+  80% {
+    opacity: 0.6;
   }
   100% {
-    transform: translateY(108vh) rotate(800deg);
+    transform: translateY(108vh) translateX(var(--drift, 0px)) rotate(320deg);
     opacity: 0;
   }
 }

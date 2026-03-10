@@ -11,6 +11,7 @@ const App = (() => {
   let rpdPollTimer = null;
   let rpdIsDemo = false;
   let rpdWaiting = false;
+  let _visibilityHandler = null;
 
   const applicant = {
     name: "",
@@ -44,13 +45,6 @@ const App = (() => {
     }
 
     bindForms();
-
-    // TODO: remove prefill before shipping
-    document.getElementById("inp-name").value = "Anay Rajguru";
-    document.getElementById("inp-email").value = "anay.rajguru@razorpay.com";
-    document.getElementById("inp-phone").value = "8529132943";
-    document.getElementById("inp-loan").value = "500000";
-    document.getElementById("inp-upi").value = "anay.rajguru@superyes";
 
     showScreen(0);
   }
@@ -156,7 +150,8 @@ const App = (() => {
     const progressBar = document.getElementById("progress-bar");
     progressBar.classList.toggle("hidden", step === 0 || step === 4);
 
-    if (step < 3) document.body.classList.remove("on-verifying");
+    if (step !== 3) document.body.classList.remove("on-verifying");
+    if (step !== 4) document.body.classList.remove("on-success");
 
     updateMobileUI(step);
   }
@@ -394,8 +389,10 @@ const App = (() => {
         _hideRpdWaiting();
         startVerifyAnimation(bankData);
       }, 3000);
+    } else {
+      // Live: snap-check the moment the user returns from the UPI app
+      _watchForReturn();
     }
-    // Live: pollRPD was already started by _initRpdSession
   }
 
   // ─── RPD internal helpers ─────────────────────────────────────
@@ -508,8 +505,39 @@ const App = (() => {
     }, 3000);
   }
 
+  // ─── Step 2 — Snap-check when user returns from UPI app ───────
+  function _watchForReturn() {
+    _clearVisibilityWatch();
+    _visibilityHandler = function () {
+      if (document.visibilityState !== "visible") return;
+      _clearVisibilityWatch();
+      if (!rpdFavId) return;
+      // Immediately ping the server the moment the user switches back
+      fetch(`/api/validate-rpd/${rpdFavId}`)
+        .then((r) => r.json())
+        .then((json) => {
+          if (json.status === "completed" && json.data) {
+            clearInterval(rpdPollTimer);
+            bankData = json.data;
+            _hideRpdWaiting();
+            startVerifyAnimation(bankData);
+          }
+        })
+        .catch(() => {}); // background poll will handle errors
+    };
+    document.addEventListener("visibilitychange", _visibilityHandler);
+  }
+
+  function _clearVisibilityWatch() {
+    if (_visibilityHandler) {
+      document.removeEventListener("visibilitychange", _visibilityHandler);
+      _visibilityHandler = null;
+    }
+  }
+
   // ─── Step 2 — Reverse Penny Drop: cancel ─────────────────────
   function cancelRPD() {
+    _clearVisibilityWatch();
     clearInterval(rpdPollTimer);
     clearTimeout(rpdPollTimer);
     rpdFavId = null;
@@ -545,7 +573,7 @@ const App = (() => {
         requestAnimationFrame(() => badge.classList.remove("hidden")),
       );
     }
-    document.body.classList.add("on-verifying");
+    document.body.classList.add("on-success");
 
     const appId =
       "LB-" +
@@ -671,7 +699,7 @@ const App = (() => {
 
   // startVerifyAnimation — RPD flow: data already available, skip initiation phase
   function startVerifyAnimation(data) {
-    beginVerifying('Fetching your details…');
+    beginVerifying('Fetching bank details…');
     scheduleVerifyFields(data);
   }
 
@@ -799,18 +827,20 @@ const App = (() => {
     wrap.className = "confetti-wrap";
     document.body.appendChild(wrap);
 
-    for (let i = 0; i < 72; i++) {
+    for (let i = 0; i < 60; i++) {
       const p = document.createElement("div");
       p.className = "confetti-p";
-      const size = Math.random() * 9 + 5;
+      const size = Math.random() * 5 + 3;
+      const drift = ((Math.random() - 0.5) * 100).toFixed(1);
       p.style.cssText = `
         left: ${Math.random() * 100}%;
         width: ${size}px;
-        height: ${size}px;
+        height: ${size * (Math.random() > 0.4 ? 1 : 1.8)}px;
         background: ${COLORS[Math.floor(Math.random() * COLORS.length)]};
-        border-radius: ${Math.random() > 0.4 ? "50%" : "3px"};
-        animation-delay: ${(Math.random() * 0.6).toFixed(2)}s;
-        animation-duration: ${(Math.random() * 2 + 1.8).toFixed(2)}s;
+        border-radius: ${Math.random() > 0.4 ? "50%" : "2px"};
+        animation-delay: ${(Math.random() * 0.8).toFixed(2)}s;
+        animation-duration: ${(Math.random() * 1.5 + 2.2).toFixed(2)}s;
+        --drift: ${drift}px;
       `;
       wrap.appendChild(p);
     }
