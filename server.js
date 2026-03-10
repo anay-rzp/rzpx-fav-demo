@@ -306,8 +306,13 @@ function serveDemoResponse(vpaAddress, name, res) {
   }, 2200);
 }
 
-// ─── Start ───────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`\n  RazorpayX FAV Demo  →  http://localhost:${PORT}`);
-  console.log(`  Mode: ${isLiveMode ? 'Live (RazorpayX APIs active)' : 'Demo (mock data — configure .env for live)'}\n`);
-});
+// ─── Start (local dev only) ───────────────────────────────────────────────────
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log(`\n  RazorpayX FAV Demo  →  http://localhost:${PORT}`);
+    console.log(`  Mode: ${isLiveMode ? 'Live (RazorpayX APIs active)' : 'Demo (mock data — configure .env for live)'}\n`);
+  });
+}
+
+// ─── Export for Vercel ────────────────────────────────────────────────────────
+module.exports = app;
