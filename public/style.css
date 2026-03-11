@@ -399,13 +399,34 @@ body {
   height: 20px;
   width: auto;
 }
+.welcome-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.welcome-logo-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: #EFF6FF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.welcome-logo-icon {
+  font-size: 34px;
+  color: #1D4ED8;
+}
+
 .welcome-heading {
   font-size: 32px;
   font-weight: 800;
   letter-spacing: -0.8px;
   line-height: 1.15;
   color: var(--text-primary);
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 .welcome-sub {
   font-size: 14px;
