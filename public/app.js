@@ -374,7 +374,7 @@ const App = (() => {
         rpdPollTimer = setTimeout(() => {
           bankData = _rpdMockData();
           startVerifyAnimation(bankData);
-        }, 3000);
+        }, 1500);
         return;
       }
 
@@ -428,7 +428,7 @@ const App = (() => {
         bankData = _rpdMockData();
         _hideRpdWaiting();
         startVerifyAnimation(bankData);
-      }, 3000);
+      }, 1500);
     } else {
       // Live: snap-check the moment the user returns from the UPI app
       _watchForReturn();
@@ -692,8 +692,48 @@ const App = (() => {
           t.textContent = "Fetching bank details…";
           t.style.opacity = "1";
         }, 200);
-      }, 1800);
+      }, 800);
     }
+  }
+
+  // jaroWinkler — fuzzy name similarity score (0–1)
+  function jaroWinkler(a, b) {
+    const norm = s => s.toLowerCase().replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ').trim();
+    a = norm(a); b = norm(b);
+    if (a === b) return 1;
+    if (!a || !b) return 0;
+    const win = Math.max(0, Math.floor(Math.max(a.length, b.length) / 2) - 1);
+    const am = new Array(a.length).fill(false);
+    const bm = new Array(b.length).fill(false);
+    let m = 0;
+    for (let i = 0; i < a.length; i++) {
+      const lo = Math.max(0, i - win), hi = Math.min(i + win + 1, b.length);
+      for (let j = lo; j < hi; j++) {
+        if (bm[j] || a[i] !== b[j]) continue;
+        am[i] = bm[j] = true; m++; break;
+      }
+    }
+    if (!m) return 0;
+    let t = 0, k = 0;
+    for (let i = 0; i < a.length; i++) {
+      if (!am[i]) continue;
+      while (!bm[k]) k++;
+      if (a[i] !== b[k]) t++;
+      k++;
+    }
+    const jaro = (m / a.length + m / b.length + (m - t / 2) / m) / 3;
+    let p = 0;
+    for (let i = 0; i < Math.min(4, a.length, b.length); i++) {
+      if (a[i] === b[i]) p++; else break;
+    }
+    return jaro + p * 0.1 * (1 - jaro);
+  }
+
+  function nameMatchInfo(score) {
+    const pct = Math.round(score * 100);
+    if (pct >= 90) return { pct, label: 'High Match', cls: 'match-high' };
+    if (pct >= 70) return { pct, label: 'Partial Match', cls: 'match-partial' };
+    return { pct, label: 'Low Match', cls: 'match-low' };
   }
 
   // scheduleVerifyFields — populate shimmer cells once data is available
@@ -717,24 +757,42 @@ const App = (() => {
       el.appendChild(span);
     }
 
-    setTimeout(() => fillField("vd-vpa", data.vpa || "—"), 700);
-    setTimeout(
-      () => fillField("vd-name", data.registeredName || applicant.name || "—"),
-      1200,
-    );
-    setTimeout(() => fillField("vd-account", data.accountNumber), 1700);
-    setTimeout(() => fillField("vd-bank", data.bankName || "—"), 2200);
-    setTimeout(() => fillField("vd-ifsc", data.ifscCode), 2700);
+    setTimeout(() => fillField("vd-vpa", data.vpa || "—"), 200);
+    setTimeout(() => {
+      if (_verifyRunId !== runId) return;
+      const el = document.getElementById("vd-name");
+      if (!el) return;
+      const displayName = data.registeredName || applicant.name || "—";
+      const wrap = document.createElement("span");
+      wrap.className = "vdr-name-wrap";
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "vdr-val-text";
+      nameSpan.textContent = displayName;
+      wrap.appendChild(nameSpan);
+      if (data.registeredName && applicant.name) {
+        const score = jaroWinkler(applicant.name, data.registeredName);
+        const { pct, label, cls } = nameMatchInfo(score);
+        const scoreSpan = document.createElement("span");
+        scoreSpan.className = `vdr-match-score ${cls}`;
+        scoreSpan.textContent = `${pct}% match`;
+        wrap.appendChild(scoreSpan);
+      }
+      el.innerHTML = "";
+      el.appendChild(wrap);
+    }, 450);
+    setTimeout(() => fillField("vd-account", data.accountNumber), 700);
+    setTimeout(() => fillField("vd-bank", data.bankName || "—"), 950);
+    setTimeout(() => fillField("vd-ifsc", data.ifscCode), 1200);
     setTimeout(() => {
       if (_verifyRunId !== runId) return;
       const el = document.getElementById("vd-status");
       if (!el) return;
       el.innerHTML =
         '<span class="vdr-val-text"><span class="status-active-pill"><span class="status-active-dot"></span>Active</span></span>';
-    }, 3200);
+    }, 1450);
     setTimeout(() => {
       if (_verifyRunId === runId) showVerifySuccess();
-    }, 3700);
+    }, 1700);
   }
 
   // startVerifyAnimation — RPD flow: data already available, skip initiation phase

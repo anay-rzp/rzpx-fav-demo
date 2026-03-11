@@ -1658,6 +1658,26 @@ body.on-success {
   animation: valueIn 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
+/* Name field: stacked name + match score */
+.vdr-name-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.vdr-match-score {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  opacity: 0;
+  animation: valueIn 0.3s cubic-bezier(0.25, 1, 0.5, 1) 0.15s forwards;
+}
+
+.vdr-match-score.match-high    { color: var(--success); }
+.vdr-match-score.match-partial { color: var(--warning); }
+.vdr-match-score.match-low     { color: var(--danger);  }
+
 /* Account status pill */
 .status-active-pill {
   display: inline-flex;
@@ -1769,6 +1789,7 @@ body.on-success {
     animation: none;
   }
   .vdr-val-text,
+  .vdr-match-score,
   #verifying-footer:not(.hidden) {
     animation: none;
     opacity: 1;
