@@ -12,6 +12,8 @@ const App = (() => {
   let rpdIsDemo = false;
   let rpdWaiting = false;
   let _visibilityHandler = null;
+  let _rpdInitPromise = null;  // tracks the in-flight _initRpdSession promise
+  let _rpdAppUrls = {};        // { appName → deep-link URL } populated after init
 
   const applicant = {
     name: "",
@@ -405,8 +407,9 @@ const App = (() => {
     if (drawer) drawer.classList.add("open");
     if (backdrop) backdrop.classList.add("open");
 
-    // Initiate session in background while drawer is open
-    _initRpdSession().catch((err) => {
+    // Initiate session in background while drawer is open; store promise so
+    // selectRpdApp can wait on it if the user taps before init resolves.
+    _rpdInitPromise = _initRpdSession().catch((err) => {
       closeRpdDrawer();
       showRPDError(err.message || "Failed to start. Please try again.");
     });
@@ -421,7 +424,6 @@ const App = (() => {
 
   // Called when user taps an app row in the drawer
   function selectRpdApp(appName) {
-    // Allow the link's href to fire naturally (opens the UPI app deep link)
     closeRpdDrawer();
     _showRpdWaiting(appName);
 
@@ -432,10 +434,24 @@ const App = (() => {
         _hideRpdWaiting();
         startVerifyAnimation(bankData);
       }, 1500);
-    } else {
-      // Live: snap-check the moment the user returns from the UPI app
-      _watchForReturn();
+      return;
     }
+
+    // Live: navigate to the UPI app's deep-link URL and snap-check on return.
+    // If _initRpdSession hasn't resolved yet (race condition), wait for it first.
+    function doNavigate() {
+      if (!rpdWaiting) return; // user cancelled while we were waiting
+      const url = _rpdAppUrls[appName];
+      if (url) window.location.href = url;
+    }
+
+    if (_rpdAppUrls[appName]) {
+      doNavigate();
+    } else {
+      (_rpdInitPromise || Promise.resolve()).then(doNavigate).catch(() => {});
+    }
+
+    _watchForReturn();
   }
 
   // ─── RPD internal helpers ─────────────────────────────────────
@@ -450,7 +466,14 @@ const App = (() => {
     rpdIsDemo = json.demo;
 
     if (!json.demo) {
-      // Pre-populate deep links on drawer rows
+      // Store URLs so selectRpdApp can navigate even if the user tapped early
+      _rpdAppUrls = {
+        'PhonePe':    json.phonepeUrl || null,
+        'Google Pay': json.gpayUrl    || null,
+        'Paytm':      json.paytmUrl   || null,
+        'BHIM':       json.bhimUrl    || null,
+      };
+      // Also set hrefs on drawer rows for the happy-path (session ready before tap)
       if (json.phonepeUrl)
         document.getElementById("rpd-row-phonepe").href = json.phonepeUrl;
       if (json.gpayUrl)
@@ -587,6 +610,9 @@ const App = (() => {
     rpdPollTimer = null;
     rpdIsDemo = false;
     rpdWaiting = false;
+    _rpdAppUrls = {};
+    // _rpdInitPromise is intentionally left — any in-flight fetch resolves harmlessly;
+    // openRpdDrawer replaces it on the next open.
 
     document.getElementById("rpd-intro").classList.remove("hidden");
     document.getElementById("rpd-pay").classList.add("hidden");
