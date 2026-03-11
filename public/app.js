@@ -663,6 +663,8 @@ const App = (() => {
       "#screen-verifying .verify-details-list",
     );
     if (verifyingList) verifyingList.classList.remove("verified");
+    const waitingBody = document.getElementById("rpd-waiting-body");
+    if (waitingBody) waitingBody.classList.add("hidden");
     [
       "vd-vpa",
       "vd-name",
