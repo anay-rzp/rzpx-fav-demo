@@ -122,11 +122,9 @@ const App = (() => {
   function updateMobileUI(step) {
     const footer = document.getElementById("mobile-footer");
 
-    // Footer note: only visible on welcome screen
     const footerNote = document.getElementById("mobile-footer-note");
     if (footerNote) footerNote.classList.toggle("hidden", step !== 0);
 
-    // Footer CTA per step
     if (step === 0) {
       footer.classList.remove("hidden");
       setFooterCTA("Apply Now", () => goTo(1));
@@ -202,14 +200,12 @@ const App = (() => {
   }
 
   function updateProgress(step) {
-    // Mobile progress bar
     const fill = document.getElementById("progress-bar-fill");
     if (fill) {
       const pct = step >= 1 && step <= 3 ? Math.round((step / 3) * 100) : 0;
       fill.style.width = pct + "%";
     }
 
-    // Desktop step indicator
     const si = document.getElementById("step-indicator");
     if (si) {
       const show = step >= 1 && step <= 2;
@@ -383,7 +379,6 @@ const App = (() => {
         return;
       }
 
-      // Desktop: show QR code
       if (json.qrCode) {
         document.getElementById("rpd-qr-wrap").classList.remove("hidden");
         document.getElementById("rpd-apps-wrap").classList.add("hidden");
@@ -422,7 +417,6 @@ const App = (() => {
     if (backdrop) backdrop.classList.remove("open");
   }
 
-  // Called when user taps an app row in the drawer
   function selectRpdApp(appName) {
     closeRpdDrawer();
     _showRpdWaiting(appName);
@@ -490,7 +484,6 @@ const App = (() => {
     rpdWaiting = true;
     goTo(3);
 
-    // Header: spinner + "Waiting for payment"
     const spinner = document.getElementById("verify-header-spinner");
     const badge = document.getElementById("verify-header-badge");
     const title = document.getElementById("verify-header-title");
@@ -501,13 +494,11 @@ const App = (() => {
       title.style.cssText = "";
     }
 
-    // Body instruction with app name
     const body = document.getElementById("rpd-waiting-body");
     const appSpan = document.getElementById("rpd-selected-app-name");
     if (appSpan) appSpan.textContent = appName;
     if (body) body.classList.remove("hidden");
 
-    // Hide details card until payment received
     const card = document.querySelector("#screen-verifying .verify-card-wrap");
     if (card) card.classList.add("hidden");
 
@@ -516,7 +507,6 @@ const App = (() => {
       document.getElementById("mobile-footer").classList.add("hidden");
     }
 
-    // Full-screen overlay while waiting
     document.getElementById("screen-verifying").classList.add("rpd-waiting");
   }
 
@@ -536,7 +526,8 @@ const App = (() => {
       bankColor: "#004C8F",
       registeredName: applicant.name || "Rahul Kumar",
       accountNumber: "50XXXXXX6789",
-      accountType: "SAVINGS",
+      accountType: "saving",
+      upiInstrument: "bank account",
       ifscCode: "HDFC0001234",
       accountStatus: "active",
       accountVerified: true,
@@ -634,7 +625,6 @@ const App = (() => {
 
   // ─── Populate success screen ──────────────────────────────────
   function populateSuccess() {
-    // Trigger badge pop animation on each visit
     const badge = document.getElementById("success-badge");
     if (badge) {
       badge.classList.add("hidden");
@@ -669,7 +659,6 @@ const App = (() => {
     const runId = ++_verifyRunId;
     goTo(3);
 
-    // Reset card border and shimmer
     const verifyingList = document.querySelector(
       "#screen-verifying .verify-details-list",
     );
@@ -678,6 +667,8 @@ const App = (() => {
       "vd-vpa",
       "vd-name",
       "vd-account",
+      "vd-account-type",
+      "vd-upi-instrument",
       "vd-bank",
       "vd-ifsc",
       "vd-status",
@@ -685,13 +676,12 @@ const App = (() => {
       const el = document.getElementById(id);
       if (el) el.innerHTML = '<span class="vdr-shimmer"></span>';
     });
-    // Show both optional rows during shimmer (data will hide them if absent)
-    ["vd-row-account", "vd-row-ifsc"].forEach((id) => {
+    // Show all optional rows during shimmer (data will hide them if absent)
+    ["vd-row-account", "vd-row-account-type", "vd-row-upi-instrument", "vd-row-ifsc"].forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.classList.remove("hidden");
     });
 
-    // Reset header
     const spinner = document.getElementById("verify-header-spinner");
     const badge = document.getElementById("verify-header-badge");
     const title = document.getElementById("verify-header-title");
@@ -769,11 +759,19 @@ const App = (() => {
   function scheduleVerifyFields(data) {
     const runId = _verifyRunId;
 
-    // Update optional row visibility now that data is known
     const rowAccount = document.getElementById("vd-row-account");
+    const rowAccountType = document.getElementById("vd-row-account-type");
+    const rowUpiInstrument = document.getElementById("vd-row-upi-instrument");
     const rowIfsc = document.getElementById("vd-row-ifsc");
     if (rowAccount) rowAccount.classList.toggle("hidden", !data.accountNumber);
+    if (rowAccountType) rowAccountType.classList.toggle("hidden", !data.accountType);
+    if (rowUpiInstrument) rowUpiInstrument.classList.toggle("hidden", !data.upiInstrument);
     if (rowIfsc) rowIfsc.classList.toggle("hidden", !data.ifscCode);
+
+    function toTitleCase(str) {
+      if (!str) return str;
+      return str.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+    }
 
     function fillField(id, value) {
       if (_verifyRunId !== runId) return;
@@ -786,7 +784,7 @@ const App = (() => {
       el.appendChild(span);
     }
 
-    setTimeout(() => fillField("vd-vpa", data.vpa || "—"), 200);
+    setTimeout(() => fillField("vd-vpa", data.vpa || "—"), 150);
     setTimeout(() => {
       if (_verifyRunId !== runId) return;
       const el = document.getElementById("vd-name");
@@ -808,20 +806,22 @@ const App = (() => {
       }
       el.innerHTML = "";
       el.appendChild(wrap);
-    }, 450);
-    setTimeout(() => fillField("vd-account", data.accountNumber), 700);
-    setTimeout(() => fillField("vd-bank", data.bankName || "—"), 950);
-    setTimeout(() => fillField("vd-ifsc", data.ifscCode), 1200);
+    }, 350);
+    setTimeout(() => fillField("vd-account", data.accountNumber), 550);
+    setTimeout(() => fillField("vd-account-type", toTitleCase(data.accountType)), 750);
+    setTimeout(() => fillField("vd-upi-instrument", toTitleCase(data.upiInstrument)), 950);
+    setTimeout(() => fillField("vd-bank", data.bankName || "—"), 1150);
+    setTimeout(() => fillField("vd-ifsc", data.ifscCode), 1350);
     setTimeout(() => {
       if (_verifyRunId !== runId) return;
       const el = document.getElementById("vd-status");
       if (!el) return;
       el.innerHTML =
         '<span class="vdr-val-text"><span class="status-active-pill"><span class="status-active-dot"></span>Active</span></span>';
-    }, 1450);
+    }, 1550);
     setTimeout(() => {
       if (_verifyRunId === runId) showVerifySuccess();
-    }, 1700);
+    }, 1750);
   }
 
   // startVerifyAnimation — RPD flow: data already available, skip initiation phase
@@ -831,7 +831,6 @@ const App = (() => {
   }
 
   function showVerifySuccess() {
-    // Mark the details card as verified (subtle green border)
     const list = document.querySelector(
       "#screen-verifying .verify-details-list",
     );
@@ -841,10 +840,8 @@ const App = (() => {
     const badge = document.getElementById("verify-header-badge");
     const title = document.getElementById("verify-header-title");
 
-    // 1. Spinner exits — shrinks and fades
     if (spinner) spinner.classList.add("hiding");
 
-    // 2. Badge pops in once spinner has faded
     setTimeout(() => {
       if (badge) badge.classList.remove("hidden");
     }, 200);

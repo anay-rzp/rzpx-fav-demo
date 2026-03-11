@@ -19,7 +19,6 @@
      APP SHELL
 ════════════════════════════════════════════════════════════ -->
     <div id="app">
-      <!-- Header -->
       <header class="app-header">
         <div class="header-inner">
           <div class="brand">
@@ -434,6 +433,18 @@
                   ><span class="vdr-shimmer"></span
                 ></span>
               </div>
+              <div class="verify-detail-row" id="vd-row-account-type">
+                <span class="vdr-label">Account Type</span>
+                <span class="vdr-value" id="vd-account-type"
+                  ><span class="vdr-shimmer"></span
+                ></span>
+              </div>
+              <div class="verify-detail-row" id="vd-row-upi-instrument">
+                <span class="vdr-label">UPI Instrument</span>
+                <span class="vdr-value" id="vd-upi-instrument"
+                  ><span class="vdr-shimmer"></span
+                ></span>
+              </div>
               <div class="verify-detail-row">
                 <span class="vdr-label">Bank Name</span>
                 <span class="vdr-value" id="vd-bank"
@@ -677,7 +688,6 @@
           </div>
         </div>
       </main>
-      <!-- end app-main -->
 
       <!-- UPI drawer backdrop (mobile-only) -->
       <div
@@ -747,7 +757,6 @@
         </p>
       </div>
     </div>
-    <!-- end #app -->
 
     <script src="app.js"></script>
   </body>
