@@ -165,6 +165,9 @@ const App = (() => {
     let step = HASH_TO_STEP[hash];
     if (step === undefined) step = 0;
 
+    // If navigating away while RPD is mid-flow, clean up the session and timer
+    if (step !== 3 && rpdWaiting) cancelRPD();
+
     // Guards: steps with data dependencies
     if (step === 2 && !applicant.name) step = 1;
     if (step === 4 && !bankData) step = 0;

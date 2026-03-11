@@ -1767,7 +1767,7 @@ body.on-success {
 }
 
 /* RPD waiting state: full-screen overlay, no container */
-#screen-verifying.rpd-waiting {
+#screen-verifying.active.rpd-waiting {
   position: fixed;
   inset: 0;
   top: 60px; /* below sticky header */
