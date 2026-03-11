@@ -30,6 +30,11 @@ const App = (() => {
     "screen-success",
   ];
 
+  // ─── Hash routing maps ──────────────────────────────────────
+  // step 3 (verifying) is transient — no hash entry, replaces with #verify
+  const STEP_HASHES = ["#welcome", "#details", "#verify", null, "#success"];
+  const HASH_TO_STEP = { "#welcome": 0, "#details": 1, "#verify": 2, "#success": 4 };
+
   // ─── Init ───────────────────────────────────────────────────
   async function init() {
     try {
@@ -45,8 +50,15 @@ const App = (() => {
     }
 
     bindForms();
+    window.addEventListener("hashchange", onHashChange);
 
-    showScreen(0);
+    // Handle initial URL hash — either deep-link to a valid step or start at welcome
+    if (location.hash && HASH_TO_STEP[location.hash] !== undefined) {
+      onHashChange();
+    } else {
+      history.replaceState(null, "", "#welcome");
+      showScreen(0);
+    }
   }
 
   // ─── UPI Drawer ─────────────────────────────────────────────
@@ -135,6 +147,34 @@ const App = (() => {
 
   // ─── Navigation ─────────────────────────────────────────────
   function goTo(step) {
+    currentStep = step;
+    showScreen(step);
+    updateProgress(step);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    const hash = STEP_HASHES[step];
+    if (hash) {
+      history.pushState(null, "", hash);
+    } else {
+      // Transient screen (verifying) — replace so Back skips it
+      history.replaceState(null, "", "#verify");
+    }
+  }
+
+  function onHashChange() {
+    const hash = location.hash || "#welcome";
+    let step = HASH_TO_STEP[hash];
+    if (step === undefined) step = 0;
+
+    // Guards: steps with data dependencies
+    if (step === 2 && !applicant.name) step = 1;
+    if (step === 4 && !bankData) step = 0;
+
+    // If guard redirected, fix the URL too (replaceState — don't grow history)
+    const targetHash = STEP_HASHES[step];
+    if (targetHash && targetHash !== location.hash) {
+      history.replaceState(null, "", targetHash);
+    }
+
     currentStep = step;
     showScreen(step);
     updateProgress(step);
