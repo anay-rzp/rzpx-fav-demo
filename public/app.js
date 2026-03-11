@@ -772,7 +772,7 @@ const App = (() => {
 
     function toTitleCase(str) {
       if (!str) return str;
-      return str.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+      return str.replace(/_/g, ' ').replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
     }
 
     function fillField(id, value) {
@@ -880,6 +880,8 @@ const App = (() => {
       const footer = document.getElementById("mobile-footer");
       footer.classList.remove("hidden");
       setFooterCTA("Submit Application", submitApplication);
+      const rpdNote = document.getElementById("rpd-footer-note");
+      if (rpdNote) rpdNote.classList.add("hidden");
     }
   }
 
